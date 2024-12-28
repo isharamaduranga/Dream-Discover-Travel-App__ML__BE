@@ -1,3 +1,4 @@
+# Environment Files
 .env
 .env/
 
@@ -16,10 +17,6 @@ __pycache__/
 
 # Python environment
 venv/
-
-.env
-.env/
-
 
 # Jupyter Notebook
 .ipynb_checkpoints/
