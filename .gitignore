@@ -13,7 +13,7 @@ __pycache__/
 # Python environment
 venv/
 
-.env/
+.env
 
 
 # Jupyter Notebook
