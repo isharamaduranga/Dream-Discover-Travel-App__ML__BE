@@ -58,8 +58,29 @@ def login(user_credentials: UserLogin, db: Session = Depends(get_db)):
     else:
         return create_response("error", "Invalid Credential!", data=None)
 
+
 # API to get all users
 @app.get("/api/v1/users", response_model=list[User])
 def get_all_users(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
     return get_users(db, skip=skip, limit=limit)
+
+
+# API to get a specific user
+@app.get("/api/v1/users/{user_id}")
+def get_specific_user(user_id: int, db: Session = Depends(get_db)):
+    try:
+        user = get_user(db, user_id)
+        if user is not None:
+            user_data = {
+                "id": user.id,
+                "username": user.username,
+                "email": user.email,
+                "user_img": user.user_img
+            }
+            return create_response("success", "User retrieved successfully", data=user_data)
+        else:
+            return create_response("error", "User not found", data=None)
+    except Exception as e:
+        return create_response("error", f"Internal Server Error: {str(e)}", data=None)
+
 
