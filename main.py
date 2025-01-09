@@ -6,7 +6,7 @@ from fastapi import UploadFile
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from crud import create_user, authenticate_user, get_users
+from crud import create_user, authenticate_user, get_users, get_user, delete_user_from_db
 from response import create_response
 from schemas import User, UserLogin
 app = FastAPI()
@@ -82,5 +82,18 @@ def get_specific_user(user_id: int, db: Session = Depends(get_db)):
             return create_response("error", "User not found", data=None)
     except Exception as e:
         return create_response("error", f"Internal Server Error: {str(e)}", data=None)
+
+
+@app.delete("/api/v1/users/{user_id}")
+def delete_user_endpoint(user_id: int, db: Session = Depends(get_db)):
+    try:
+        deleted_user = delete_user_from_db(db, user_id)
+        if deleted_user:
+            return create_response("success", "User deleted successfully", data=None)
+        else:
+            return create_response("error", "User not found", data=None)
+    except Exception as e:
+        return create_response("error", f"Internal Server Error: {str(e)}", data=None)
+
 
 

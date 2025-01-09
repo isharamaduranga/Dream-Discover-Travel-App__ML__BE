@@ -84,3 +84,13 @@ def authenticate_user(db: Session, username: str, password: str):
     if user and pwd_context.verify(password, user.hashed_password):
         return user
     return None
+
+# Function to delete user
+def delete_user_from_db(db: Session, user_id: int):
+    user = db.query(User).filter(User.id == user_id).first()
+    if user:
+        db.delete(user)
+        db.commit()
+        return user
+    else:
+        return None
