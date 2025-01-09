@@ -2,13 +2,15 @@ import os
 
 from fastapi import Depends, FastAPI, File, Form, HTTPException
 from starlette.middleware.cors import CORSMiddleware
+from typing import List
 from fastapi import UploadFile
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from crud import create_user, authenticate_user, get_users, get_user, delete_user_from_db, create_place
+from crud import create_user, authenticate_user, get_users, get_user, delete_user_from_db, create_place, \
+    get_places_by_user_id
 from response import create_response
-from schemas import User, UserLogin, PlaceCreate
+from schemas import User, UserLogin, PlaceCreate, PlaceResponse, PlaceGetByUserId
 
 app = FastAPI()
 
@@ -138,6 +140,17 @@ def create_place_endpoint(
         db.rollback()
         return create_response("error", f"Internal Server Error: {str(e)}", data=None)
 
+
+# API to get places by user ID
+@app.post("/api/v1/places/getByUserId", response_model=List[PlaceResponse])
+def get_places_by_user_id_endpoint(user_data: PlaceGetByUserId, db: Session = Depends(get_db)):
+    places = get_places_by_user_id(db, user_id=user_data.user_id)
+
+    # Convert tags from comma-separated string to list
+    for place in places:
+        place.tags = place.tags.split(',')
+
+    return places
 
 
 
