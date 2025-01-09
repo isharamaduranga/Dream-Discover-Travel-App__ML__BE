@@ -22,6 +22,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 def get_password_hash(password: str):
     return pwd_context.hash(password)
 
+# Common Function to upload images to aws s3 bucket
 def upload_to_aws(file, bucket, s3_file, acl="public-read"):
     print(f"Uploading {s3_file} to {bucket}")
 
@@ -41,7 +42,7 @@ def upload_to_aws(file, bucket, s3_file, acl="public-read"):
         print("Credentials not available")
         return False
 
-
+# Function to create new user and saved
 def create_user(
         db: Session,
         username: str,
@@ -69,9 +70,15 @@ def create_user(
     db.refresh(db_user)
     return create_response("success", "User created successfully", data={"user_id": db_user.id})
 
+# Function to get specific user by userId
+def get_user(db: Session, user_id: int):
+    return db.query(User).filter(User.id == user_id).first()
+
+# Function to get All users from db
 def get_users(db: Session, skip: int = 0, limit: int = 10):
     return db.query(User).offset(skip).limit(limit).all()
 
+# Function to user authentication
 def authenticate_user(db: Session, username: str, password: str):
     user = db.query(User).filter(User.email == username).first()
     if user and pwd_context.verify(password, user.hashed_password):
