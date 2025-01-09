@@ -20,3 +20,17 @@ class User(UserBase):
 class UserLogin(BaseModel):
     username: str
     password: str
+
+
+# place base schemas
+class PlaceBase(BaseModel):
+    title: str
+    content: str
+    tags: List[str]
+    user_id: int
+    user_full_name: str
+    rating_score: float
+
+
+class PlaceCreate(PlaceBase):
+    pass
