@@ -6,9 +6,10 @@ from fastapi import UploadFile
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from crud import create_user, authenticate_user, get_users, get_user, delete_user_from_db
+from crud import create_user, authenticate_user, get_users, get_user, delete_user_from_db, create_place
 from response import create_response
-from schemas import User, UserLogin
+from schemas import User, UserLogin, PlaceCreate
+
 app = FastAPI()
 
 # Enable CORS (Cross-Origin Resource Sharing) for all origins
@@ -94,6 +95,49 @@ def delete_user_endpoint(user_id: int, db: Session = Depends(get_db)):
             return create_response("error", "User not found", data=None)
     except Exception as e:
         return create_response("error", f"Internal Server Error: {str(e)}", data=None)
+
+
+# API to create a new place
+@app.post("/api/v1/createPlace/")
+def create_place_endpoint(
+        title: str = Form(...),
+        content: str = Form(...),
+        tags: str = Form(...),
+        user_id: int = Form(...),
+        user_full_name: str = Form(...),
+        rating_score: float = Form(...),
+        img: UploadFile = File(...),
+        db: Session = Depends(get_db),
+):
+    try:
+        # Create a new PlaceCreate object
+        place_data = PlaceCreate(
+            title=title,
+            content=content,
+            tags=tags.split(','),
+            user_id=user_id,
+            user_full_name=user_full_name,
+            rating_score=rating_score,
+        )
+
+        # Create the place in the database
+        new_place = create_place(db, place_data, img)
+
+        place = {
+            "place_id": new_place.id,
+            "user_id": new_place.user_id
+        }
+
+        return create_response("success", "Place created successfully", data=place)
+
+    except IntegrityError as e:
+        db.rollback()
+        return create_response("error", f"Internal Server Error: {str(e)}", data=None)
+
+    except Exception as e:
+        db.rollback()
+        return create_response("error", f"Internal Server Error: {str(e)}", data=None)
+
 
 
 
