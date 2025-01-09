@@ -133,3 +133,7 @@ def create_place(db: Session, place: PlaceCreate, img: UploadFile):
         # Handle other exceptions
         return create_response("error", f"Internal Server Error: {str(e)}", data=None)
         # raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
+
+# Function to get places by userId
+def get_places_by_user_id(db: Session, user_id: int):
+    return db.query(Place).filter(Place.user_id == user_id).all()
