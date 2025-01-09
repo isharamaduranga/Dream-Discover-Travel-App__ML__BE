@@ -34,3 +34,27 @@ class PlaceBase(BaseModel):
 
 class PlaceCreate(PlaceBase):
     pass
+
+
+# Place response schema
+class PlaceResponse(BaseModel):
+    id: int
+    img: str  # Change the type to str for URLs
+    title: str
+    content: str
+    tags: List[str]
+    user_id: int
+    user_full_name: str
+    rating_score: float
+    posted_date: datetime
+
+    class Config:
+        orm_mode = True
+
+
+class PlaceGetByUserId(BaseModel):
+    user_id: int
+
+
+class PlaceGetByPlaceId(BaseModel):
+    place_id: int
