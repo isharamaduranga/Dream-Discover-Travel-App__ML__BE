@@ -6,7 +6,7 @@ from fastapi import UploadFile
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from crud import create_user, authenticate_user
+from crud import create_user, authenticate_user, get_users
 from response import create_response
 from schemas import User, UserLogin
 app = FastAPI()
@@ -57,3 +57,9 @@ def login(user_credentials: UserLogin, db: Session = Depends(get_db)):
         return create_response("success", "Successfully login", data=user_data)
     else:
         return create_response("error", "Invalid Credential!", data=None)
+
+# API to get all users
+@app.get("/api/v1/users", response_model=list[User])
+def get_all_users(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
+    return get_users(db, skip=skip, limit=limit)
+
