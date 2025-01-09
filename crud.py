@@ -69,6 +69,9 @@ def create_user(
     db.refresh(db_user)
     return create_response("success", "User created successfully", data={"user_id": db_user.id})
 
+def get_users(db: Session, skip: int = 0, limit: int = 10):
+    return db.query(User).offset(skip).limit(limit).all()
+
 def authenticate_user(db: Session, username: str, password: str):
     user = db.query(User).filter(User.email == username).first()
     if user and pwd_context.verify(password, user.hashed_password):
