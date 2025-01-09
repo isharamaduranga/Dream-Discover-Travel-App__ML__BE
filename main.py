@@ -6,7 +6,7 @@ from fastapi import UploadFile
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from crud import create_user
+from crud import create_user, authenticate_user
 from response import create_response
 from schemas import User, UserLogin
 app = FastAPI()
@@ -44,6 +44,16 @@ def register_user(
         return create_response("error", "Email already registered!", data=None)
 
 
-@app.get("/")
-def home():
-    return {"message": "hello dream discover"}
+# API to login
+@app.post("/api/v1/login")
+def login(user_credentials: UserLogin, db: Session = Depends(get_db)):
+    user = authenticate_user(db, username=user_credentials.username, password=user_credentials.password)
+    if user:
+        user_data = {
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,
+        }
+        return create_response("success", "Successfully login", data=user_data)
+    else:
+        return create_response("error", "Invalid Credential!", data=None)
