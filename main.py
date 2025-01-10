@@ -8,9 +8,10 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from crud import create_user, authenticate_user, get_users, get_user, delete_user_from_db, create_place, \
-    get_places_by_user_id, get_place_by_place_id, create_comment
+    get_places_by_user_id, get_place_by_place_id, create_comment, get_comments_by_user_id
 from response import create_response
-from schemas import User, UserLogin, PlaceCreate, PlaceResponse, PlaceGetByUserId, PlaceGetByPlaceId, CommentCreate
+from schemas import User, UserLogin, PlaceCreate, PlaceResponse, PlaceGetByUserId, PlaceGetByPlaceId, CommentCreate, \
+    CommentByUserIdResponse
 
 app = FastAPI()
 
@@ -174,5 +175,25 @@ def create_comment_endpoint(comment: CommentCreate, db: Session = Depends(get_db
     except Exception as e:
         return create_response("error", f"Internal Server Error: {str(e)}", data=None)
 
+
+@app.get("/api/v1/getCommentsByUserId/{user_id}", response_model=List[CommentByUserIdResponse])
+def get_comments_by_user_id_endpoint(user_id: int, db: Session = Depends(get_db)):
+    comments = get_comments_by_user_id(db, user_id)
+
+    # Map the results to CommentByUserIdResponse
+    comments_response = [
+        CommentByUserIdResponse(
+            comment_id=comment.id,
+            comment_text=comment.comment_text,
+            email=comment.email,
+            name=comment.name,
+            commented_at=comment.commented_at,
+            user_id=comment.user_id,
+            place_id=comment.place_id
+        )
+        for comment in comments
+    ]
+
+    return comments_response
 
 
