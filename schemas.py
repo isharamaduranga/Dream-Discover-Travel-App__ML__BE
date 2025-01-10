@@ -58,3 +58,15 @@ class PlaceGetByUserId(BaseModel):
 
 class PlaceGetByPlaceId(BaseModel):
     place_id: int
+
+
+# Add a new schema for creating a comment
+class CommentBase(BaseModel):
+    comment_text: str
+    email: str
+    name: str
+
+
+class CommentCreate(CommentBase):
+    place_id: int
+    user_id: int
