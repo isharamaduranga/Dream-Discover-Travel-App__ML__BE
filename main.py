@@ -8,9 +8,9 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from crud import create_user, authenticate_user, get_users, get_user, delete_user_from_db, create_place, \
-    get_places_by_user_id
+    get_places_by_user_id, get_place_by_place_id
 from response import create_response
-from schemas import User, UserLogin, PlaceCreate, PlaceResponse, PlaceGetByUserId
+from schemas import User, UserLogin, PlaceCreate, PlaceResponse, PlaceGetByUserId, PlaceGetByPlaceId
 
 app = FastAPI()
 
@@ -153,4 +153,14 @@ def get_places_by_user_id_endpoint(user_data: PlaceGetByUserId, db: Session = De
     return places
 
 
+# API to get a place by place ID
+@app.post("/api/v1/places/getByPlaceId", response_model=PlaceResponse)
+def get_place_by_place_id_endpoint(place_data: PlaceGetByPlaceId, db: Session = Depends(get_db)):
+    place = get_place_by_place_id(db, place_id=place_data.place_id)
+
+    # Convert tags from comma-separated string to list
+    if place:
+        place.tags = place.tags.split(',')
+
+    return place
 

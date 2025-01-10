@@ -137,3 +137,7 @@ def create_place(db: Session, place: PlaceCreate, img: UploadFile):
 # Function to get places by userId
 def get_places_by_user_id(db: Session, user_id: int):
     return db.query(Place).filter(Place.user_id == user_id).all()
+
+# Function to get places by placeId
+def get_place_by_place_id(db: Session, place_id: int):
+    return db.query(Place).filter(Place.id == place_id).first()
