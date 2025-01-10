@@ -10,9 +10,9 @@ from passlib.context import CryptContext
 from sqlalchemy import desc, and_
 from sqlalchemy.orm import Session
 
-from models import UserRoles, User , Place
+from models import UserRoles, User, Place, Comment
 from response import create_response
-from schemas import PlaceCreate
+from schemas import PlaceCreate, CommentCreate
 
 # Load environment variables from .env file
 load_dotenv()
@@ -141,3 +141,18 @@ def get_places_by_user_id(db: Session, user_id: int):
 # Function to get places by placeId
 def get_place_by_place_id(db: Session, place_id: int):
     return db.query(Place).filter(Place.id == place_id).first()
+
+# Function to create comment
+def create_comment(db: Session, comment: CommentCreate):
+    db_comment = Comment(
+        comment_text=comment.comment_text,
+        email=comment.email,
+        name=comment.name,
+        place_id=comment.place_id,
+        user_id=comment.user_id
+    )
+    db.add(db_comment)
+    db.commit()
+    db.refresh(db_comment)
+    return db_comment
+
