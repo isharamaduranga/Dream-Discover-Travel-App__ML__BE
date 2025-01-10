@@ -8,9 +8,9 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from crud import create_user, authenticate_user, get_users, get_user, delete_user_from_db, create_place, \
-    get_places_by_user_id, get_place_by_place_id
+    get_places_by_user_id, get_place_by_place_id, create_comment
 from response import create_response
-from schemas import User, UserLogin, PlaceCreate, PlaceResponse, PlaceGetByUserId, PlaceGetByPlaceId
+from schemas import User, UserLogin, PlaceCreate, PlaceResponse, PlaceGetByUserId, PlaceGetByPlaceId, CommentCreate
 
 app = FastAPI()
 
@@ -163,4 +163,16 @@ def get_place_by_place_id_endpoint(place_data: PlaceGetByPlaceId, db: Session = 
         place.tags = place.tags.split(',')
 
     return place
+
+
+# Api to create new comment related place
+@app.post("/api/v1/createComment")
+def create_comment_endpoint(comment: CommentCreate, db: Session = Depends(get_db)):
+    try:
+        new_comment = create_comment(db, comment)
+        return create_response("success", "Comment created successfully", data={"comment_id": new_comment.id})
+    except Exception as e:
+        return create_response("error", f"Internal Server Error: {str(e)}", data=None)
+
+
 
