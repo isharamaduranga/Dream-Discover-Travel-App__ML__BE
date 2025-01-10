@@ -160,4 +160,8 @@ def create_comment(db: Session, comment: CommentCreate):
 def get_comments_by_user_id(db: Session, user_id: int):
     return db.query(Comment).filter(Comment.user_id == user_id).all()
 
+# Function to get comments by placeId
+def get_comments_by_place_id(db: Session, place_id: int):
+    return db.query(Comment).filter(Comment.place_id == place_id).all()
+
 
