@@ -70,3 +70,23 @@ class CommentBase(BaseModel):
 class CommentCreate(CommentBase):
     place_id: int
     user_id: int
+
+
+class CommentByUserIdResponse(BaseModel):
+    comment_id: int
+    comment_text: str
+    email: str
+    name: str
+    commented_at: datetime
+    user_id: int
+    place_id: int
+
+
+class CommentByPlaceIdResponse(BaseModel):
+    comment_id: int
+    comment_text: str
+    email: str
+    name: str
+    commented_at: datetime
+    user_id: int
+    place_id: int
