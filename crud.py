@@ -156,3 +156,8 @@ def create_comment(db: Session, comment: CommentCreate):
     db.refresh(db_comment)
     return db_comment
 
+# Function to get comments by userId
+def get_comments_by_user_id(db: Session, user_id: int):
+    return db.query(Comment).filter(Comment.user_id == user_id).all()
+
+
