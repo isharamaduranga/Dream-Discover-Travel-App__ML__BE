@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from crud import create_user, authenticate_user, get_users, get_user, delete_user_from_db, create_place, \
     get_places_by_user_id, get_place_by_place_id, create_comment, get_comments_by_user_id, get_comments_by_place_id, \
-    get_all_places_with_comments
+    get_all_places_with_comments, get_all_places_with_comments_by_place_id
 from response import create_response
 from schemas import User, UserLogin, PlaceCreate, PlaceResponse, PlaceGetByUserId, PlaceGetByPlaceId, CommentCreate, \
     CommentByUserIdResponse, CommentByPlaceIdResponse
@@ -234,4 +234,22 @@ def get_all_places_with_comments_endpoint(db: Session = Depends(get_db)):
         # Handle any exceptions and return an error response
         error_message = "Failed to fetch data. Reason: {}".format(str(e))
         raise HTTPException(status_code=500, detail=error_message)
+
+
+@app.get("/api/v1/placesWithComments/{place_id}", response_model=dict)
+def get_all_places_with_comments_by_id_endpoint(place_id: int, db: Session = Depends(get_db)):
+    try:
+        places_with_comments = get_all_places_with_comments_by_place_id(db, place_id)
+        response_data = {
+            "status": "success",
+            "message": "Successfully fetched",
+            "data": {"data": places_with_comments}
+        }
+        return response_data
+    except Exception as e:
+        # Handle any exceptions and return an error response
+        error_message = "Failed to fetch data. Reason: {}".format(str(e))
+        raise HTTPException(status_code=500, detail=error_message)
+
+
 
