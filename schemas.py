@@ -1,9 +1,9 @@
-# user base schemas
-from fastapi import UploadFile, Form
+
 from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
 
+# user base schemas
 class UserBase(BaseModel):
     username: str
     email: str
@@ -36,7 +36,6 @@ class PlaceCreate(PlaceBase):
     pass
 
 
-# Place response schema
 class PlaceResponse(BaseModel):
     id: int
     img: str  # Change the type to str for URLs
@@ -60,7 +59,7 @@ class PlaceGetByPlaceId(BaseModel):
     place_id: int
 
 
-# Add a new schema for creating a comment
+# comment base schemas
 class CommentBase(BaseModel):
     comment_text: str
     email: str
