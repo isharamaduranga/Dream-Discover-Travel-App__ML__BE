@@ -9,11 +9,16 @@ from sqlalchemy.orm import Session
 
 from crud import create_user, authenticate_user, get_users, get_user, delete_user_from_db, create_place, \
     get_places_by_user_id, get_place_by_place_id, create_comment, get_comments_by_user_id, get_comments_by_place_id, \
-    get_all_places_with_comments, get_all_places_with_comments_by_place_id
+    get_all_places_with_comments, get_all_places_with_comments_by_place_id, get_places_by_tag, \
+    get_all_places_with_comments_by_search_text
 from response import create_response
 from schemas import User, UserLogin, PlaceCreate, PlaceResponse, PlaceGetByUserId, PlaceGetByPlaceId, CommentCreate, \
     CommentByUserIdResponse, CommentByPlaceIdResponse
 
+
+from database import SessionLocal, engine
+from models import Base
+Base.metadata.create_all(bind=engine)
 app = FastAPI()
 
 # Enable CORS (Cross-Origin Resource Sharing) for all origins
@@ -27,7 +32,7 @@ app.add_middleware(
 
 
 # Dependency to get the current user from the database
-def get_db(SessionLocal=None):
+def get_db():
     db = SessionLocal()
     try:
         yield db
@@ -236,6 +241,7 @@ def get_all_places_with_comments_endpoint(db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=error_message)
 
 
+# API to get all places with comments by place id
 @app.get("/api/v1/placesWithComments/{place_id}", response_model=dict)
 def get_all_places_with_comments_by_id_endpoint(place_id: int, db: Session = Depends(get_db)):
     try:
@@ -250,6 +256,45 @@ def get_all_places_with_comments_by_id_endpoint(place_id: int, db: Session = Dep
         # Handle any exceptions and return an error response
         error_message = "Failed to fetch data. Reason: {}".format(str(e))
         raise HTTPException(status_code=500, detail=error_message)
+
+
+# API to get places by tag
+@app.post("/api/v1/places/getByPlace", response_model=dict)
+def get_places_by_tag_endpoint(tag: str = Form(...), minscore: float = Form(...), maxscore: float = Form(...),
+                               db: Session = Depends(get_db)):
+    try:
+        places_with_comments = get_places_by_tag(db, tag=tag, min=minscore, max=maxscore)
+        response_data = {
+            "status": "success",
+            "message": "Successfully fetched",
+            "data": {"data": places_with_comments}
+        }
+        return response_data
+    except Exception as e:
+        error_message = "Failed to fetch data. Reason: {}".format(str(e))
+        raise HTTPException(status_code=500, detail=error_message)
+
+# Add a new API endpoint for searching places and comments
+@app.get("/api/v1/placesWithComments/search/{search_text}", response_model=dict)
+def search_places_and_comments(search_text: str, db: Session = Depends(get_db)
+                               ):
+    try:
+        places_with_comments = get_all_places_with_comments_by_search_text(db, search_text)
+        response_data = {
+            "status": "success",
+            "message": "Successfully fetched",
+            "data": {"data": places_with_comments}
+        }
+        return response_data
+    except Exception as e:
+        # Handle any exceptions and return an error response
+        error_message = f"Failed to fetch data. Reason: {str(e)}"
+        raise HTTPException(status_code=500, detail=error_message)
+
+
+def create_response(status, message, data):
+    return {"status": status, "message": message, "data": data}
+
 
 
 
