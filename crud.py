@@ -257,4 +257,103 @@ def get_all_places_with_comments_by_place_id(db: Session, place_id: int):
     return places_with_comments_by_id
 
 
+# Add a new function to get places by tag
+def get_places_by_tag(db: Session, tag: str, min: float, max: float):
+    places = db.query(Place).filter(Place.tags.ilike(f"%{tag}%")).filter(and_(Place.rating_score >= min, Place.rating_score <= max)).order_by(desc(Place.rating_score)).all()
+    places_with_comments_result = []
+
+    for place in places:
+        comments = get_comments_by_place_id(db, place.id)
+        user = get_user(db, place.user_id)
+
+        comments_response = []
+
+        for comment in comments:
+            # Get user information for the comment's user
+            comment_user = get_user(db, comment.user_id)
+
+            comment_response = CommentResponse(
+                comment_id=comment.id,
+                comment_text=comment.comment_text,
+                email=comment.email,
+                name=comment.name,
+                commented_at=comment.commented_at,
+                user_id=comment.user_id,
+                user_image=comment_user.user_img,  # Set user_image for the comment
+                place_id=comment.place_id
+            )
+
+            comments_response.append(comment_response)
+
+        place_with_comments = {
+            "id": place.id,
+            "img": place.img,
+            "title": place.title,
+            "content": place.content,
+            "tags": place.tags.split(','),
+            "user_id": place.user_id,
+            "user_full_name": place.user_full_name,
+            "rating_score": place.rating_score,
+            "posted_date": place.posted_date,
+            "user_image": user.user_img,
+            "comments": comments_response
+        }
+
+        places_with_comments_result.append(place_with_comments)
+
+    return places_with_comments_result
+
+
+# Add a new function to search for places and comments
+def get_all_places_with_comments_by_search_text(db: Session, search_text: str):
+    # Perform a case-insensitive search for places and comments where title or tags contain the search text
+    places = db.query(Place).filter(
+        (Place.title.ilike(f"%{search_text}%")) |
+        (Place.tags.ilike(f"%{search_text}%"))
+    ).all()
+
+    places_with_comments = []
+
+    for place in places:
+        comments = db.query(Comment).filter(Comment.place_id == place.id).all()
+        user = get_user(db, place.user_id)
+
+        comments_response = []
+
+        for comment in comments:
+            # Get user information for the comment's user
+            comment_user = get_user(db, comment.user_id)
+
+            comment_response = CommentResponse(
+                comment_id=comment.id,
+                comment_text=comment.comment_text,
+                email=comment.email,
+                name=comment.name,
+                commented_at=comment.commented_at,
+                user_id=comment.user_id,
+                user_image=comment_user.user_img,  # Set user_image for the comment
+                place_id=comment.place_id
+            )
+
+            comments_response.append(comment_response)
+
+        place_with_comments = {
+            "id": place.id,
+            "img": place.img,
+            "title": place.title,
+            "content": place.content,
+            "tags": place.tags.split(','),
+            "user_id": place.user_id,
+            "user_full_name": place.user_full_name,
+            "rating_score": place.rating_score,
+            "posted_date": place.posted_date,
+            "user_image": user.user_img,
+            "comments": comments_response
+        }
+
+        places_with_comments.append(place_with_comments)
+
+    return places_with_comments
+
+
 
