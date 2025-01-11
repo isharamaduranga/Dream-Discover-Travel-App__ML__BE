@@ -164,7 +164,7 @@ def get_comments_by_user_id(db: Session, user_id: int):
 def get_comments_by_place_id(db: Session, place_id: int):
     return db.query(Comment).filter(Comment.place_id == place_id).all()
 
-
+# Function to get All places with comments
 def get_all_places_with_comments(db: Session):
     places = db.query(Place).all()
     places_with_comments = []
@@ -209,6 +209,52 @@ def get_all_places_with_comments(db: Session):
         places_with_comments.append(place_with_comments)
 
     return places_with_comments
+
+# Function to get All places with comments by place id
+def get_all_places_with_comments_by_place_id(db: Session, place_id: int):
+    places = db.query(Place).filter(Place.id == place_id).all()
+    places_with_comments_by_id = []
+
+    for place in places:
+        comments = get_comments_by_place_id(db, place.id)
+        user = get_user(db, place.user_id)
+
+        comments_response = []
+
+        for comment in comments:
+            # Get user information for the comment's user
+            comment_user = get_user(db, comment.user_id)
+
+            comment_response = CommentResponse(
+                comment_id=comment.id,
+                comment_text=comment.comment_text,
+                email=comment.email,
+                name=comment.name,
+                commented_at=comment.commented_at,
+                user_id=comment.user_id,
+                user_image=comment_user.user_img,  # Set user_image for the comment
+                place_id=comment.place_id
+            )
+
+            comments_response.append(comment_response)
+
+        place_with_comments = {
+            "id": place.id,
+            "img": place.img,
+            "title": place.title,
+            "content": place.content,
+            "tags": place.tags.split(','),
+            "user_id": place.user_id,
+            "user_full_name": place.user_full_name,
+            "rating_score": place.rating_score,
+            "posted_date": place.posted_date,
+            "user_image": user.user_img,
+            "comments": comments_response
+        }
+
+        places_with_comments_by_id.append(place_with_comments)
+
+    return places_with_comments_by_id
 
 
 
