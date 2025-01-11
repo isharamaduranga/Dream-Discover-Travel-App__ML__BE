@@ -8,7 +8,8 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from crud import create_user, authenticate_user, get_users, get_user, delete_user_from_db, create_place, \
-    get_places_by_user_id, get_place_by_place_id, create_comment, get_comments_by_user_id, get_comments_by_place_id
+    get_places_by_user_id, get_place_by_place_id, create_comment, get_comments_by_user_id, get_comments_by_place_id, \
+    get_all_places_with_comments
 from response import create_response
 from schemas import User, UserLogin, PlaceCreate, PlaceResponse, PlaceGetByUserId, PlaceGetByPlaceId, CommentCreate, \
     CommentByUserIdResponse, CommentByPlaceIdResponse
@@ -176,6 +177,7 @@ def create_comment_endpoint(comment: CommentCreate, db: Session = Depends(get_db
         return create_response("error", f"Internal Server Error: {str(e)}", data=None)
 
 
+# API to get comments by userId in related user
 @app.get("/api/v1/getCommentsByUserId/{user_id}", response_model=List[CommentByUserIdResponse])
 def get_comments_by_user_id_endpoint(user_id: int, db: Session = Depends(get_db)):
     comments = get_comments_by_user_id(db, user_id)
@@ -196,6 +198,7 @@ def get_comments_by_user_id_endpoint(user_id: int, db: Session = Depends(get_db)
 
     return comments_response
 
+# API to get comments by placeId in related place
 @app.get("/api/v1/getCommentsByPlaceId/{place_id}", response_model=List[CommentByPlaceIdResponse])
 def get_comments_by_place_id_endpoint(place_id: int, db: Session = Depends(get_db)):
     comments = get_comments_by_place_id(db, place_id)
@@ -216,4 +219,19 @@ def get_comments_by_place_id_endpoint(place_id: int, db: Session = Depends(get_d
     return comments_response
 
 
+# API to get all places with comments
+@app.get("/api/v1/placesWithComments", response_model=dict)
+def get_all_places_with_comments_endpoint(db: Session = Depends(get_db)):
+    try:
+        places_with_comments = get_all_places_with_comments(db)
+        response_data = {
+            "status": "success",
+            "message": "Successfully fetched",
+            "data": {"data": places_with_comments}
+        }
+        return response_data
+    except Exception as e:
+        # Handle any exceptions and return an error response
+        error_message = "Failed to fetch data. Reason: {}".format(str(e))
+        raise HTTPException(status_code=500, detail=error_message)
 
