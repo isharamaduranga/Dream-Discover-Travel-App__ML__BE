@@ -90,3 +90,14 @@ class CommentByPlaceIdResponse(BaseModel):
     commented_at: datetime
     user_id: int
     place_id: int
+
+
+class CommentResponse(BaseModel):
+    comment_id: int
+    comment_text: str
+    email: str
+    name: str
+    commented_at: datetime
+    user_id: int
+    user_image: str
+    place_id: int
