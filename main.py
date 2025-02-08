@@ -177,7 +177,7 @@ def get_place_by_place_id_endpoint(place_data: PlaceGetByPlaceId, db: Session = 
 def create_comment_endpoint(comment: CommentCreate, db: Session = Depends(get_db)):
     try:
         new_comment = create_comment(db, comment)
-        return create_response("success", "Comment created successfully", data={"comment_id": new_comment.id})
+        return create_response("success", "Comment created successfully", data={"comment_id": new_comment})
     except Exception as e:
         return create_response("error", f"Internal Server Error: {str(e)}", data=None)
 

@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 from models import UserRoles, User, Place, Comment
 from response import create_response
 from schemas import PlaceCreate, CommentCreate, CommentResponse
+from predictionPipeline import analyze_text
 
 # Load environment variables from .env file
 load_dotenv()
@@ -144,15 +145,35 @@ def get_place_by_place_id(db: Session, place_id: int):
 
 # Function to create comment
 def create_comment(db: Session, comment: CommentCreate):
+    # Get sentiment analysis result
+    sentiment = analyze_text(comment.comment_text)
+    
+    # Get the place from db
+    place = db.query(Place).filter(Place.id == comment.place_id).first()
+
+    if not place:
+        return None  # Or raise an appropriate exception
+    
+    # Update sentiment counts based on the analysis result
+    if sentiment == 'negative':
+        place.negative_count += 1
+    elif sentiment == 'positive':
+        place.positive_count += 1
+    elif sentiment == 'neutral':
+        place.neutral_count += 1
+    
     db_comment = Comment(
         comment_text=comment.comment_text,
         email=comment.email,
         name=comment.name,
         place_id=comment.place_id,
-        user_id=comment.user_id
+        user_id=comment.user_id,
+        label=sentiment,
+        static_rating=comment.static_rating
     )
+    
     db.add(db_comment)
-    db.commit()
+    db.commit()  # This commit will save both the comment and place changes
     db.refresh(db_comment)
     return db_comment
 
@@ -233,7 +254,9 @@ def get_all_places_with_comments_by_place_id(db: Session, place_id: int):
                 commented_at=comment.commented_at,
                 user_id=comment.user_id,
                 user_image=comment_user.user_img,  # Set user_image for the comment
-                place_id=comment.place_id
+                place_id=comment.place_id,
+                static_rating=comment.static_rating,
+                label=comment.label
             )
 
             comments_response.append(comment_response)
@@ -249,6 +272,9 @@ def get_all_places_with_comments_by_place_id(db: Session, place_id: int):
             "rating_score": place.rating_score,
             "posted_date": place.posted_date,
             "user_image": user.user_img,
+            "negative_sentiment_count": place.negative_count,
+            "positive_sentiment_count": place.positive_count,
+            "neutral_sentiment_count": place.neutral_count,
             "comments": comments_response
         }
 
