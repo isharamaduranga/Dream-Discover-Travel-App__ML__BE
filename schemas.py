@@ -64,7 +64,7 @@ class CommentBase(BaseModel):
     comment_text: str
     email: str
     name: str
-
+    static_rating: float
 
 class CommentCreate(CommentBase):
     place_id: int
@@ -100,3 +100,5 @@ class CommentResponse(BaseModel):
     user_id: int
     user_image: str
     place_id: int
+    static_rating: float
+    label: str

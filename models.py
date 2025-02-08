@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, Enum, DateTime, Text, Float
 from sqlalchemy.orm import declarative_base, relationship
 from enum import Enum as PyEnum
-from datetime import datetime
+from datetime import datetime, timezone
 
 Base = declarative_base()
 
@@ -33,10 +33,13 @@ class Place(Base):
     user_id = Column(Integer, ForeignKey("users.id"))
     user = relationship("User", back_populates="places")
     user_full_name = Column(String)  # Add user full name
-    posted_date = Column(DateTime, default=datetime.utcnow)  # Add posted date
+    posted_date = Column(DateTime, default=lambda: datetime.now(timezone.utc))  # Changed from UTC to timezone.utc
     content = Column(String)
     rating_score = Column(Float)
     tags = Column(String)
+    negative_count = Column(Integer, default=0)
+    positive_count = Column(Integer, default=0) 
+    neutral_count = Column(Integer, default=0)
     comments = relationship("Comment", back_populates="place")
 
 
@@ -46,10 +49,12 @@ class Comment(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
     place_id = Column(Integer, ForeignKey("places.id"))
-    commented_at = Column(DateTime, default=datetime.utcnow)
+    commented_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))  # Changed from UTC to timezone.utc
     comment_text = Column(Text)
     email = Column(String)  # extra add field
     name = Column(String)  # extra add field
+    label = Column(String)  # sentiment label
+    static_rating = Column(Float, nullable=True)  # New field
     user = relationship("User", back_populates="comments")
     place = relationship("Place", back_populates="comments")
 
