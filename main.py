@@ -296,5 +296,44 @@ def create_response(status, message, data):
     return {"status": status, "message": message, "data": data}
 
 
+# this place has before rating system through huggingface inbuilt model now that api change for that comment read
+# prediction pypeline through update related place rating score 0 1 or 2 its mean negative , natural or positive
+
+@app.post("/api/v1/places/scoreAndUpdate/{place_id}")
+def score_and_update_place(
+        place_id: int, db: Session = Depends(get_db)
+):
+    try:
+        # Fetch comments from the database based on place_id
+        comments = get_comments_by_place_id(db, place_id)
+
+        # Extract comment text from each comment
+        comments_list = [comment.comment_text for comment in comments]
+
+        print("comments", comments_list)
+
+        # Use your machine learning model to score the comments
+        scores = [predict_score(comment) for comment in comments_list]
+
+        print("scores total ---> ", scores)
+        print("sum of score ---> ", sum(scores))
+        print("length of score ---> ", len(scores))
+
+        # Calculate the average score
+        avg_score = sum(scores) / len(scores)
+        print("avg of score ---> ", avg_score )
+
+        # Update the place rating_score in the database
+        place = get_place_by_place_id(db, place_id)
+        if place:
+            place.rating_score = avg_score
+            db.commit()
+            db.refresh(place)
+            return {"rating_score": avg_score}
+        else:
+            return create_response("error", "Place not found !", data=None)
+
+    except Exception as e:
+        return create_response("error", f"Internal Server Error: {str(e)}", data=None)
 
 
