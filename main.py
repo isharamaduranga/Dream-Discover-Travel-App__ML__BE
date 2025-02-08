@@ -74,7 +74,7 @@ def login(user_credentials: UserLogin, db: Session = Depends(get_db)):
 def get_all_users(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
     return get_users(db, skip=skip, limit=limit)
 
-
+#===================================================
 # API to get a specific user
 @app.get("/api/v1/users/{user_id}")
 def get_specific_user(user_id: int, db: Session = Depends(get_db)):
