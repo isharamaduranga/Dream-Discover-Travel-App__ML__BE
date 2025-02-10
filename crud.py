@@ -208,7 +208,9 @@ def get_all_places_with_comments(db: Session):
                 commented_at=comment.commented_at,
                 user_id=comment.user_id,
                 user_image=comment_user.user_img,  # Set user_image for the comment
-                place_id=comment.place_id
+                place_id=comment.place_id,
+                static_rating=comment.static_rating,
+                label=comment.label
             )
 
             comments_response.append(comment_response)

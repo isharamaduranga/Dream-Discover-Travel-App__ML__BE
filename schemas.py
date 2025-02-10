@@ -100,5 +100,5 @@ class CommentResponse(BaseModel):
     user_id: int
     user_image: str
     place_id: int
-    static_rating: float
-    label: str
+    static_rating: float = 0.0  # Default value
+    label: str = "neutral"  # Default value
