@@ -65,6 +65,7 @@ def login(user_credentials: UserLogin, db: Session = Depends(get_db)):
             "id": user.id,
             "username": user.username,
             "email": user.email,
+            "userRole": user.role
         }
         return create_response("success", "Successfully login", data=user_data)
     else:
