@@ -11,7 +11,8 @@ from sqlalchemy.orm import Session
 from crud import create_user, authenticate_user, get_users, get_user, delete_user_from_db, create_place, \
     get_places_by_user_id, get_place_by_place_id, create_comment, get_comments_by_user_id, get_comments_by_place_id, \
     get_all_places_with_comments, get_all_places_with_comments_by_place_id, get_places_by_tag, \
-    get_all_places_with_comments_by_search_text, create_travel_plan
+    get_all_places_with_comments_by_search_text, create_travel_plan, update_travel_plan, get_travel_plans_by_user_id, \
+    get_travel_plans_by_place_id, get_filtered_travel_plans
 from response import create_response
 from schemas import User, UserLogin, PlaceCreate, PlaceResponse, PlaceGetByUserId, PlaceGetByPlaceId, CommentCreate, \
     CommentByUserIdResponse, CommentByPlaceIdResponse, TravelPlanCreate
@@ -404,5 +405,68 @@ def create_travel_plan_endpoint(
 
     except ValueError as e:
         return create_response("error", f"Invalid data format: {str(e)}", data=None)
+    except Exception as e:
+        return create_response("error", f"Internal Server Error: {str(e)}", data=None)
+
+@app.put("/api/v1/travel-plans/{travel_plan_id}")
+def update_travel_plan_endpoint(
+    travel_plan_id: int,
+    user_id: int = Form(...),
+    place_id: int = Form(...),
+    travel_date: str = Form(...),
+    email_address: str = Form(...),
+    budget: float = Form(...),
+    number_of_travelers: int = Form(...),
+    preferred_activities: str = Form(...),
+    special_notes: str = Form(None),
+    notification_preference: str = Form(...),
+    notification_days_before: int = Form(None),
+    db: Session = Depends(get_db)
+):
+    try:
+        # Convert string date to datetime
+        travel_date = datetime.fromisoformat(travel_date)
+        
+        travel_plan_data = TravelPlanCreate(
+            user_id=user_id,
+            place_id=place_id,
+            travel_date=travel_date,
+            email_address=email_address,
+            budget=budget,
+            number_of_travelers=number_of_travelers,
+            preferred_activities=preferred_activities,
+            special_notes=special_notes,
+            notification_preference=notification_preference,
+            notification_days_before=notification_days_before
+        )
+
+        updated_travel_plan = update_travel_plan(db, travel_plan_id, travel_plan_data)
+        if updated_travel_plan:
+            return create_response(
+                "success",
+                "Travel plan updated successfully",
+                data={"travel_plan_id": updated_travel_plan.id}
+            )
+        return create_response("error", "Travel plan not found", data=None)
+
+    except ValueError as e:
+        return create_response("error", f"Invalid data format: {str(e)}", data=None)
+    except Exception as e:
+        return create_response("error", f"Internal Server Error: {str(e)}", data=None)
+
+@app.get("/api/v1/travel-plans")
+def get_travel_plans(
+    user_id: int = None,
+    place_id: int = None,
+    db: Session = Depends(get_db)
+):
+    try:
+        travel_plans = get_filtered_travel_plans(db, user_id, place_id)
+        return create_response(
+            "success",
+            "Travel plans retrieved successfully",
+            data={"travel_plans": travel_plans}
+        )
+
     except Exception as e:
         return create_response("error", f"Internal Server Error: {str(e)}", data=None)
