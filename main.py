@@ -336,4 +336,22 @@ def score_and_update_place(
     except Exception as e:
         return create_response("error", f"Internal Server Error: {str(e)}", data=None)
 
-
+# API to get places by tag
+@app.patch("/api/v1/places/change-status", response_model=dict)
+def change_place_status(place_id: int = Form(...), status: str = Form(...), db: Session = Depends(get_db)):
+    try:
+        place = get_place_by_place_id(db, place_id)
+        if not place:
+            raise HTTPException(status_code=404, detail="Place not found")
+            
+        place.status = status
+        db.commit()
+        db.refresh(place)
+        
+        return {
+            "status": "success",
+            "message": "Status updated successfully"
+        }
+    except Exception as e:
+        error_message = "Failed to update status. Reason: {}".format(str(e))
+        raise HTTPException(status_code=500, detail=error_message)

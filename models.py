@@ -11,6 +11,12 @@ class UserRoles(PyEnum):
     admin = "admin"
 
 
+class PlaceStatus(PyEnum):
+    active = "active"
+    inactive = "inactive"
+    pending = "pending"
+
+
 class User(Base):
     __tablename__ = "users"
 
@@ -40,6 +46,7 @@ class Place(Base):
     negative_count = Column(Integer, default=0)
     positive_count = Column(Integer, default=0) 
     neutral_count = Column(Integer, default=0)
+    status = Column(Enum(PlaceStatus), default=PlaceStatus.active)  # Add status column
     comments = relationship("Comment", back_populates="place")
 
 
