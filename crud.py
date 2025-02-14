@@ -10,9 +10,9 @@ from passlib.context import CryptContext
 from sqlalchemy import desc, and_
 from sqlalchemy.orm import Session
 
-from models import UserRoles, User, Place, Comment
+from models import UserRoles, User, Place, Comment, TravelPlan
 from response import create_response
-from schemas import PlaceCreate, CommentCreate, CommentResponse
+from schemas import PlaceCreate, CommentCreate, CommentResponse, TravelPlanCreate
 from predictionPipeline import analyze_text
 
 # Load environment variables from .env file
@@ -382,6 +382,89 @@ def get_all_places_with_comments_by_search_text(db: Session, search_text: str):
         places_with_comments.append(place_with_comments)
 
     return places_with_comments
+
+def create_travel_plan(db: Session, travel_plan: TravelPlanCreate):
+    db_travel_plan = TravelPlan(
+        user_id=travel_plan.user_id,
+        place_id=travel_plan.place_id,
+        travel_date=travel_plan.travel_date,
+        email_address=travel_plan.email_address,
+        budget=travel_plan.budget,
+        number_of_travelers=travel_plan.number_of_travelers,
+        preferred_activities=travel_plan.preferred_activities,
+        special_notes=travel_plan.special_notes,
+        notification_preference=travel_plan.notification_preference,
+        notification_days_before=travel_plan.notification_days_before
+    )
+    
+    db.add(db_travel_plan)
+    db.commit()
+    db.refresh(db_travel_plan)
+    return db_travel_plan
+
+def update_travel_plan(db: Session, travel_plan_id: int, travel_plan_data: TravelPlanCreate):
+    # Get existing travel plan
+    db_travel_plan = db.query(TravelPlan).filter(TravelPlan.id == travel_plan_id).first()
+    
+    if not db_travel_plan:
+        return None
+        
+    # Update travel plan fields
+    db_travel_plan.user_id = travel_plan_data.user_id
+    db_travel_plan.place_id = travel_plan_data.place_id
+    db_travel_plan.travel_date = travel_plan_data.travel_date
+    db_travel_plan.email_address = travel_plan_data.email_address
+    db_travel_plan.budget = travel_plan_data.budget
+    db_travel_plan.number_of_travelers = travel_plan_data.number_of_travelers
+    db_travel_plan.preferred_activities = travel_plan_data.preferred_activities
+    db_travel_plan.special_notes = travel_plan_data.special_notes
+    db_travel_plan.notification_preference = travel_plan_data.notification_preference
+    db_travel_plan.notification_days_before = travel_plan_data.notification_days_before
+    
+    # Save changes
+    db.commit()
+    db.refresh(db_travel_plan)
+    return db_travel_plan
+
+def get_filtered_travel_plans(db: Session, user_id: int = None, place_id: int = None):
+    # Start with base query
+    query = db.query(TravelPlan)
+    
+    # Apply filters if provided
+    if user_id is not None:
+        query = query.filter(TravelPlan.user_id == user_id)
+    if place_id is not None:
+        query = query.filter(TravelPlan.place_id == place_id)
+        
+    travel_plans = query.all()
+    
+    # Convert SQLAlchemy objects to dictionaries with related information
+    travel_plans_with_details = []
+    for plan in travel_plans:
+        place = get_place_by_place_id(db, plan.place_id)
+        user = get_user(db, plan.user_id)
+        
+        plan_dict = {
+            "id": plan.id,
+            "user_id": plan.user_id,
+            "username": user.username if user else None,
+            "user_email": user.email if user else None,
+            "place_id": plan.place_id,
+            "place_title": place.title if place else None,
+            "place_img": place.img if place else None,
+            "travel_date": plan.travel_date,
+            "email_address": plan.email_address,
+            "budget": plan.budget,
+            "number_of_travelers": plan.number_of_travelers,
+            "preferred_activities": plan.preferred_activities,
+            "special_notes": plan.special_notes,
+            "notification_preference": plan.notification_preference.value,
+            "notification_days_before": plan.notification_days_before,
+            "created_at": plan.created_at
+        }
+        travel_plans_with_details.append(plan_dict)
+    
+    return travel_plans_with_details
 
 
 

@@ -17,6 +17,11 @@ class PlaceStatus(PyEnum):
     pending = "pending"
 
 
+class NotificationPreference(PyEnum):
+    email = "email"
+    none = "none"
+
+
 class User(Base):
     __tablename__ = "users"
 
@@ -28,6 +33,7 @@ class User(Base):
     user_img = Column(String, nullable=True)
     places = relationship("Place", back_populates="user")
     comments = relationship("Comment", back_populates="user")
+    travel_plans = relationship("TravelPlan", back_populates="user")
 
 
 class Place(Base):
@@ -48,6 +54,7 @@ class Place(Base):
     neutral_count = Column(Integer, default=0)
     status = Column(Enum(PlaceStatus), default=PlaceStatus.active)  # Add status column
     comments = relationship("Comment", back_populates="place")
+    travel_plans = relationship("TravelPlan", back_populates="place")
 
 
 class Comment(Base):
@@ -73,3 +80,24 @@ class Category(Base):
     image = Column(String)  # category related image
     title = Column(String)
     description = Column(String)
+
+
+class TravelPlan(Base):
+    __tablename__ = "travel_plans"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    place_id = Column(Integer, ForeignKey("places.id"))
+    travel_date = Column(DateTime)
+    email_address = Column(String)
+    budget = Column(Float)
+    number_of_travelers = Column(Integer)
+    preferred_activities = Column(Text)
+    special_notes = Column(Text, nullable=True)
+    notification_preference = Column(Enum(NotificationPreference), default=NotificationPreference.none)
+    notification_days_before = Column(Integer, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    
+    # Relationships
+    user = relationship("User", back_populates="travel_plans")
+    place = relationship("Place", back_populates="travel_plans")
