@@ -338,8 +338,14 @@ def score_and_update_place(
 
 # API to get places by tag
 @app.patch("/api/v1/places/change-status", response_model=dict)
-def change_place_status(place_id: int = Form(...), status: str = Form(...), db: Session = Depends(get_db)):
+def change_place_status(request: dict, db: Session = Depends(get_db)):
     try:
+        place_id = request.get("place_id")
+        status = request.get("status")
+        
+        if not place_id or not status:
+            raise HTTPException(status_code=400, detail="Missing required fields")
+            
         place = get_place_by_place_id(db, place_id)
         if not place:
             raise HTTPException(status_code=404, detail="Place not found")
@@ -349,7 +355,7 @@ def change_place_status(place_id: int = Form(...), status: str = Form(...), db: 
         db.refresh(place)
         
         return {
-            "status": "success",
+            "status": "success", 
             "message": "Status updated successfully"
         }
     except Exception as e:
