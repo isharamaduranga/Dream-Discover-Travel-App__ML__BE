@@ -11,8 +11,7 @@ from sqlalchemy.orm import Session
 from crud import create_user, authenticate_user, get_users, get_user, delete_user_from_db, create_place, \
     get_places_by_user_id, get_place_by_place_id, create_comment, get_comments_by_user_id, get_comments_by_place_id, \
     get_all_places_with_comments, get_all_places_with_comments_by_place_id, get_places_by_tag, \
-    get_all_places_with_comments_by_search_text, create_travel_plan, update_travel_plan, get_travel_plans_by_user_id, \
-    get_travel_plans_by_place_id, get_filtered_travel_plans
+    get_all_places_with_comments_by_search_text, create_travel_plan, update_travel_plan, get_filtered_travel_plans
 from response import create_response
 from schemas import User, UserLogin, PlaceCreate, PlaceResponse, PlaceGetByUserId, PlaceGetByPlaceId, CommentCreate, \
     CommentByUserIdResponse, CommentByPlaceIdResponse, TravelPlanCreate
