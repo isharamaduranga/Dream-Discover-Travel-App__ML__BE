@@ -1,5 +1,5 @@
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from fastapi import Depends, FastAPI, File, Form, HTTPException
 from starlette.middleware.cors import CORSMiddleware
@@ -11,7 +11,8 @@ from sqlalchemy.orm import Session
 from crud import create_user, authenticate_user, get_users, get_user, delete_user_from_db, create_place, \
     get_places_by_user_id, get_place_by_place_id, create_comment, get_comments_by_user_id, get_comments_by_place_id, \
     get_all_places_with_comments, get_all_places_with_comments_by_place_id, get_places_by_tag, \
-    get_all_places_with_comments_by_search_text, create_travel_plan, update_travel_plan, get_filtered_travel_plans
+    get_all_places_with_comments_by_search_text, create_travel_plan, update_travel_plan, get_filtered_travel_plans, \
+    get_place_sentiment_by_date_range
 from response import create_response
 from schemas import User, UserLogin, PlaceCreate, PlaceResponse, PlaceGetByUserId, PlaceGetByPlaceId, CommentCreate, \
     CommentByUserIdResponse, CommentByPlaceIdResponse, TravelPlanCreate
@@ -467,5 +468,34 @@ def get_travel_plans(
             data={"travel_plans": travel_plans}
         )
 
+    except Exception as e:
+        return create_response("error", f"Internal Server Error: {str(e)}", data=None)
+
+@app.get("/api/v1/places/{place_id}/sentiment-analysis")
+def get_place_sentiment_analysis(
+    place_id: int,
+    start_date: str,
+    end_date: str,
+    db: Session = Depends(get_db)
+):
+    try:
+        # Convert string dates to datetime objects
+        start = datetime.fromisoformat(start_date)
+        end = datetime.fromisoformat(end_date)
+        
+        # Get sentiment analysis data
+        sentiment_data = get_place_sentiment_by_date_range(db, place_id, start, end)
+        
+        if not sentiment_data:
+            return create_response("error", "Place not found or no data in date range", data=None)
+            
+        return create_response(
+            "success",
+            "Sentiment analysis retrieved successfully",
+            data=sentiment_data
+        )
+
+    except ValueError as e:
+        return create_response("error", f"Invalid date format: {str(e)}", data=None)
     except Exception as e:
         return create_response("error", f"Internal Server Error: {str(e)}", data=None)

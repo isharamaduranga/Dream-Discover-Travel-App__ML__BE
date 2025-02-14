@@ -1,6 +1,6 @@
 # crud.py
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import boto3
 from botocore.exceptions import NoCredentialsError
@@ -465,6 +465,62 @@ def get_filtered_travel_plans(db: Session, user_id: int = None, place_id: int = 
         travel_plans_with_details.append(plan_dict)
     
     return travel_plans_with_details
+
+def get_place_sentiment_by_date_range(db: Session, place_id: int, start_date: datetime, end_date: datetime):
+    # Get the place
+    place = db.query(Place).filter(Place.id == place_id).first()
+    if not place:
+        return None
+        
+    # Initialize response structure
+    response = {
+        "place": place.title,
+        "date_range": {
+            "start_date": start_date.date().isoformat(),
+            "end_date": end_date.date().isoformat()
+        },
+        "tweet_sentiment": []
+    }
+    
+    # Get all comments for this place within the date range
+    comments = db.query(Comment).filter(
+        Comment.place_id == place_id,
+        Comment.commented_at >= start_date,
+        Comment.commented_at <= end_date
+    ).all()
+    
+    # Create a dictionary to store counts for each date
+    date_sentiments = {}
+    current_date = start_date.date()
+    
+    # Initialize counts for each date in the range
+    while current_date <= end_date.date():
+        date_sentiments[current_date] = {
+            "date": current_date.isoformat(),
+            "positive": 0,
+            "negative": 0,
+            "neutral": 0
+        }
+        current_date += timedelta(days=1)
+    
+    # Count sentiments for each comment
+    for comment in comments:
+        comment_date = comment.commented_at.date()
+        if comment.label == "positive":
+            date_sentiments[comment_date]["positive"] += 1
+        elif comment.label == "negative":
+            date_sentiments[comment_date]["negative"] += 1
+        elif comment.label == "neutral":
+            date_sentiments[comment_date]["neutral"] += 1
+    
+    # Convert the dictionary to a list sorted by date
+    sentiment_list = [
+        sentiment_data 
+        for date, sentiment_data in sorted(date_sentiments.items())
+    ]
+    
+    response["tweet_sentiment"] = sentiment_list
+    return response
 
 
 
