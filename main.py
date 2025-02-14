@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 
 from fastapi import Depends, FastAPI, File, Form, HTTPException
 from starlette.middleware.cors import CORSMiddleware
@@ -10,10 +11,10 @@ from sqlalchemy.orm import Session
 from crud import create_user, authenticate_user, get_users, get_user, delete_user_from_db, create_place, \
     get_places_by_user_id, get_place_by_place_id, create_comment, get_comments_by_user_id, get_comments_by_place_id, \
     get_all_places_with_comments, get_all_places_with_comments_by_place_id, get_places_by_tag, \
-    get_all_places_with_comments_by_search_text
+    get_all_places_with_comments_by_search_text, create_travel_plan
 from response import create_response
 from schemas import User, UserLogin, PlaceCreate, PlaceResponse, PlaceGetByUserId, PlaceGetByPlaceId, CommentCreate, \
-    CommentByUserIdResponse, CommentByPlaceIdResponse
+    CommentByUserIdResponse, CommentByPlaceIdResponse, TravelPlanCreate
 
 
 from database import SessionLocal, engine
@@ -361,3 +362,47 @@ def change_place_status(request: dict, db: Session = Depends(get_db)):
     except Exception as e:
         error_message = "Failed to update status. Reason: {}".format(str(e))
         raise HTTPException(status_code=500, detail=error_message)
+
+@app.post("/api/v1/travel-plans/")
+def create_travel_plan_endpoint(
+    user_id: int = Form(...),
+    place_id: int = Form(...),
+    travel_date: str = Form(...),
+    email_address: str = Form(...),
+    budget: float = Form(...),
+    number_of_travelers: int = Form(...),
+    preferred_activities: str = Form(...),
+    special_notes: str = Form(None),
+    notification_preference: str = Form(...),
+    notification_days_before: int = Form(None),
+    db: Session = Depends(get_db)
+):
+    try:
+        # Convert string date to datetime
+        travel_date = datetime.fromisoformat(travel_date)
+        
+        travel_plan_data = TravelPlanCreate(
+            user_id=user_id,
+            place_id=place_id,
+            travel_date=travel_date,
+            email_address=email_address,
+            budget=budget,
+            number_of_travelers=number_of_travelers,
+            preferred_activities=preferred_activities,
+            special_notes=special_notes,
+            notification_preference=notification_preference,
+            notification_days_before=notification_days_before
+        )
+
+        new_travel_plan = create_travel_plan(db, travel_plan_data)
+        
+        return create_response(
+            "success",
+            "Travel plan created successfully",
+            data={"travel_plan_id": new_travel_plan.id}
+        )
+
+    except ValueError as e:
+        return create_response("error", f"Invalid data format: {str(e)}", data=None)
+    except Exception as e:
+        return create_response("error", f"Internal Server Error: {str(e)}", data=None)

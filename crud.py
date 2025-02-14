@@ -10,9 +10,9 @@ from passlib.context import CryptContext
 from sqlalchemy import desc, and_
 from sqlalchemy.orm import Session
 
-from models import UserRoles, User, Place, Comment
+from models import UserRoles, User, Place, Comment, TravelPlan
 from response import create_response
-from schemas import PlaceCreate, CommentCreate, CommentResponse
+from schemas import PlaceCreate, CommentCreate, CommentResponse, TravelPlanCreate
 from predictionPipeline import analyze_text
 
 # Load environment variables from .env file
@@ -382,6 +382,25 @@ def get_all_places_with_comments_by_search_text(db: Session, search_text: str):
         places_with_comments.append(place_with_comments)
 
     return places_with_comments
+
+def create_travel_plan(db: Session, travel_plan: TravelPlanCreate):
+    db_travel_plan = TravelPlan(
+        user_id=travel_plan.user_id,
+        place_id=travel_plan.place_id,
+        travel_date=travel_plan.travel_date,
+        email_address=travel_plan.email_address,
+        budget=travel_plan.budget,
+        number_of_travelers=travel_plan.number_of_travelers,
+        preferred_activities=travel_plan.preferred_activities,
+        special_notes=travel_plan.special_notes,
+        notification_preference=travel_plan.notification_preference,
+        notification_days_before=travel_plan.notification_days_before
+    )
+    
+    db.add(db_travel_plan)
+    db.commit()
+    db.refresh(db_travel_plan)
+    return db_travel_plan
 
 
 

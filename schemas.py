@@ -1,7 +1,7 @@
-
 from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
+from models import NotificationPreference
 
 # user base schemas
 class UserBase(BaseModel):
@@ -102,3 +102,23 @@ class CommentResponse(BaseModel):
     place_id: int
     static_rating: float = 0.0  # Default value
     label: str = "neutral"  # Default value
+
+
+class TravelPlanCreate(BaseModel):
+    user_id: int
+    place_id: int
+    travel_date: datetime
+    email_address: str
+    budget: float
+    number_of_travelers: int
+    preferred_activities: str
+    special_notes: Optional[str] = None
+    notification_preference: NotificationPreference
+    notification_days_before: Optional[int] = None
+
+class TravelPlanResponse(TravelPlanCreate):
+    id: int
+    created_at: datetime
+
+    class Config:
+        orm_mode = True
