@@ -10,7 +10,7 @@ from passlib.context import CryptContext
 from sqlalchemy import desc, and_
 from sqlalchemy.orm import Session
 
-from models import UserRoles, User, Place, Comment, TravelPlan, PlaceStatus
+from models import UserRoles, User, Place, Comment, TravelPlan, PlaceStatus, Category
 from response import create_response
 from schemas import PlaceCreate, CommentCreate, CommentResponse, TravelPlanCreate
 from predictionPipeline import analyze_text
@@ -522,5 +522,12 @@ def get_place_sentiment_by_date_range(db: Session, place_id: int, start_date: da
     response["tweet_sentiment"] = sentiment_list
     return response
 
-
-
+def get_all_categories(db: Session):
+    categories = db.query(Category).all()
+    return [
+        {
+            "id": category.id,
+            "title": category.title
+        }
+        for category in categories
+    ]
