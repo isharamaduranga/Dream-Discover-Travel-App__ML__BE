@@ -118,7 +118,8 @@ def create_place(db: Session, place: PlaceCreate, img: UploadFile):
             posted_date=datetime.utcnow(),
             content=place.content,
             rating_score=place.rating_score,
-            tags="" # Initialize empty tags string
+            tags="", # Initialize empty tags string,
+            status=PlaceStatus.pending
         )
 
         db.add(place_db)
