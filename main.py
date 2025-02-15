@@ -12,7 +12,7 @@ from crud import create_user, authenticate_user, get_users, get_user, delete_use
     get_places_by_user_id, get_place_by_place_id, create_comment, get_comments_by_user_id, get_comments_by_place_id, \
     get_all_places_with_comments, get_all_places_with_comments_by_place_id, get_places_by_tag, \
     get_all_places_with_comments_by_search_text, create_travel_plan, update_travel_plan, get_filtered_travel_plans, \
-    get_place_sentiment_by_date_range, get_all_categories, get_places_by_category
+    get_place_sentiment_by_date_range, get_all_categories, get_places_by_category, get_pending_and_inactive_places
 from response import create_response
 from schemas import User, UserLogin, PlaceCreate, PlaceResponse, PlaceGetByUserId, PlaceGetByPlaceId, CommentCreate, \
     CommentByUserIdResponse, CommentByPlaceIdResponse, TravelPlanCreate
@@ -529,5 +529,17 @@ def get_places_by_category_id(
             data={"places": places}
         )
 
+    except Exception as e:
+        return create_response("error", f"Internal Server Error: {str(e)}", data=None)
+
+@app.get("/api/v1/places/pending-inactive")
+def get_pending_and_inactive_places_endpoint(db: Session = Depends(get_db)):
+    try:
+        places = get_pending_and_inactive_places(db)
+        return create_response(
+            "success",
+            "Places retrieved successfully",
+            data=places
+        )
     except Exception as e:
         return create_response("error", f"Internal Server Error: {str(e)}", data=None)

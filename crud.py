@@ -108,7 +108,6 @@ def create_place(db: Session, place: PlaceCreate, img: UploadFile):
 
         if upload_to_aws(img.file, bucket_name, s3_file_path):
             # If the upload is successful, create the Place record in the database
-            tags_str = ",".join(place.tags)
             place_db = Place(
                 img=f"https://{bucket_name}{region_name}/{s3_file_path}",
                 title=place.title,
@@ -117,10 +116,20 @@ def create_place(db: Session, place: PlaceCreate, img: UploadFile):
                 posted_date=datetime.utcnow(),
                 content=place.content,
                 rating_score=place.rating_score,
-                tags=tags_str
+                tags="" # Initialize empty tags string
             )
 
             db.add(place_db)
+            db.commit()
+            db.refresh(place_db)
+
+            # Add category associations
+            category_ids = [int(cat_id) for cat_id in place.tags.split(',')]
+            categories = db.query(Category).filter(Category.id.in_(category_ids)).all()
+            
+            # Associate categories with the place
+            place_db.categories = categories
+            
             db.commit()
             db.refresh(place_db)
 
@@ -128,12 +137,10 @@ def create_place(db: Session, place: PlaceCreate, img: UploadFile):
         else:
             # Handle the case when the upload fails
             return create_response("error", "Failed to upload image to S3", data=None)
-            # raise HTTPException(status_code=500, detail="Failed to upload image to S3")
 
     except Exception as e:
         # Handle other exceptions
         return create_response("error", f"Internal Server Error: {str(e)}", data=None)
-        # raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
 
 # Function to get places by userId
 def get_places_by_user_id(db: Session, user_id: int):
@@ -547,3 +554,26 @@ def get_places_by_category(db: Session, category_id: int):
             places_with_details.append(place_dict)
             
     return places_with_details
+
+def get_pending_and_inactive_places(db: Session):
+    pending_places = db.query(Place).filter(Place.status == PlaceStatus.pending).all()
+    inactive_places = db.query(Place).filter(Place.status == PlaceStatus.inactive).all()
+    
+    def format_places(places):
+        return [
+            {
+                "id": place.id,
+                "title": place.title,
+                "img": place.img,
+                "user_id": place.user_id,
+                "user_full_name": place.user_full_name,
+                "posted_date": place.posted_date,
+                "status": place.status.value
+            }
+            for place in places
+        ]
+    
+    return {
+        "pending_places": format_places(pending_places),
+        "inactive_places": format_places(inactive_places)
+    }
