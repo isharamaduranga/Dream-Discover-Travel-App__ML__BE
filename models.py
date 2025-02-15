@@ -88,6 +88,7 @@ class Category(Base):
     image = Column(String)  # category related image
     title = Column(String)
     description = Column(String)
+    note = Column(Text, nullable=True)  # New field
     places = relationship("Place", secondary=place_category_association, back_populates="categories")
 
 
