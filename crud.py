@@ -106,41 +106,42 @@ def create_place(db: Session, place: PlaceCreate, img: UploadFile):
         region_name = '.s3.ap-south-1.amazonaws.com'
         s3_file_path = f"uploads/{img.filename}"
 
-        if upload_to_aws(img.file, bucket_name, s3_file_path):
-            # If the upload is successful, create the Place record in the database
-            place_db = Place(
-                img=f"https://{bucket_name}{region_name}/{s3_file_path}",
-                title=place.title,
-                user_id=place.user_id,
-                user_full_name=place.user_full_name,
-                posted_date=datetime.utcnow(),
-                content=place.content,
-                rating_score=place.rating_score,
-                tags="" # Initialize empty tags string
-            )
+        if not upload_to_aws(img.file, bucket_name, s3_file_path):
+            raise Exception("Failed to upload image to S3")
 
-            db.add(place_db)
-            db.commit()
-            db.refresh(place_db)
+        # Create the Place record in the database
+        place_db = Place(
+            img=f"https://{bucket_name}{region_name}/{s3_file_path}",
+            title=place.title,
+            user_id=place.user_id,
+            user_full_name=place.user_full_name,
+            posted_date=datetime.utcnow(),
+            content=place.content,
+            rating_score=place.rating_score,
+            tags="" # Initialize empty tags string
+        )
 
-            # Add category associations
-            category_ids = [int(cat_id) for cat_id in place.tags.split(',')]
-            categories = db.query(Category).filter(Category.id.in_(category_ids)).all()
-            
-            # Associate categories with the place
-            place_db.categories = categories
-            
-            db.commit()
-            db.refresh(place_db)
+        db.add(place_db)
+        db.commit()
+        db.refresh(place_db)
 
-            return place_db
-        else:
-            # Handle the case when the upload fails
-            return create_response("error", "Failed to upload image to S3", data=None)
+        # Add category associations
+        # Convert tags to list if it's a string
+        category_ids = place.tags if isinstance(place.tags, list) else place.tags.split(',')
+        category_ids = [int(cat_id) for cat_id in category_ids]
+        categories = db.query(Category).filter(Category.id.in_(category_ids)).all()
+        
+        # Associate categories with the place
+        place_db.categories = categories
+        
+        db.commit()
+        db.refresh(place_db)
+
+        return place_db
 
     except Exception as e:
-        # Handle other exceptions
-        return create_response("error", f"Internal Server Error: {str(e)}", data=None)
+        db.rollback()  # Rollback any changes if there's an error
+        raise e  # Re-raise the exception to be handled by the endpoint
 
 # Function to get places by userId
 def get_places_by_user_id(db: Session, user_id: int):
