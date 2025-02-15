@@ -140,7 +140,7 @@ def create_place_endpoint(
             "user_id": new_place.user_id
         }
 
-        return create_response("success", "Place created successfully", data=place)
+        return create_response("success", "Your new place request has been sent for admin approval", data=place)
 
     except IntegrityError as e:
         db.rollback()
