@@ -12,7 +12,7 @@ from crud import create_user, authenticate_user, get_users, get_user, delete_use
     get_places_by_user_id, get_place_by_place_id, create_comment, get_comments_by_user_id, get_comments_by_place_id, \
     get_all_places_with_comments, get_all_places_with_comments_by_place_id, get_places_by_tag, \
     get_all_places_with_comments_by_search_text, create_travel_plan, update_travel_plan, get_filtered_travel_plans, \
-    get_place_sentiment_by_date_range, get_all_categories
+    get_place_sentiment_by_date_range, get_all_categories, get_places_by_category
 from response import create_response
 from schemas import User, UserLogin, PlaceCreate, PlaceResponse, PlaceGetByUserId, PlaceGetByPlaceId, CommentCreate, \
     CommentByUserIdResponse, CommentByPlaceIdResponse, TravelPlanCreate
@@ -510,5 +510,24 @@ def get_categories(db: Session = Depends(get_db)):
             "Categories retrieved successfully",
             data={"categories": categories}
         )
+    except Exception as e:
+        return create_response("error", f"Internal Server Error: {str(e)}", data=None)
+
+@app.get("/api/v1/categories/{category_id}/places")
+def get_places_by_category_id(
+    category_id: int,
+    db: Session = Depends(get_db)
+):
+    try:
+        places = get_places_by_category(db, category_id)
+        if places is None:
+            return create_response("error", "Category not found", data=None)
+            
+        return create_response(
+            "success",
+            "Places retrieved successfully",
+            data={"places": places}
+        )
+
     except Exception as e:
         return create_response("error", f"Internal Server Error: {str(e)}", data=None)

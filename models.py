@@ -1,10 +1,17 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Enum, DateTime, Text, Float
+from sqlalchemy import Column, Integer, String, ForeignKey, Enum, DateTime, Text, Float, Table
 from sqlalchemy.orm import declarative_base, relationship
 from enum import Enum as PyEnum
 from datetime import datetime, timezone
 
 Base = declarative_base()
 
+# Add this after the Base declaration and before the models
+place_category_association = Table(
+    'place_category_association',
+    Base.metadata,
+    Column('place_id', Integer, ForeignKey('places.id')),
+    Column('category_id', Integer, ForeignKey('categories.id'))
+)
 
 class UserRoles(PyEnum):
     user = "user"
@@ -55,6 +62,7 @@ class Place(Base):
     status = Column(Enum(PlaceStatus), default=PlaceStatus.active)  # Add status column
     comments = relationship("Comment", back_populates="place")
     travel_plans = relationship("TravelPlan", back_populates="place")
+    categories = relationship("Category", secondary=place_category_association, back_populates="places")
 
 
 class Comment(Base):
@@ -80,6 +88,7 @@ class Category(Base):
     image = Column(String)  # category related image
     title = Column(String)
     description = Column(String)
+    places = relationship("Place", secondary=place_category_association, back_populates="categories")
 
 
 class TravelPlan(Base):

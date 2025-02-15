@@ -531,3 +531,19 @@ def get_all_categories(db: Session):
         }
         for category in categories
     ]
+
+def get_places_by_category(db: Session, category_id: int):
+    category = db.query(Category).filter(Category.id == category_id).first()
+    if not category:
+        return None
+        
+    places_with_details = []
+    for place in category.places:
+        if place.status == PlaceStatus.active:
+            place_dict = {
+                "id": place.id,
+                "title": place.title,
+            }
+            places_with_details.append(place_dict)
+            
+    return places_with_details
