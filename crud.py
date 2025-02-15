@@ -10,7 +10,10 @@ from passlib.context import CryptContext
 from sqlalchemy import desc, and_
 from sqlalchemy.orm import Session
 
-from models import UserRoles, User, Place, Comment, TravelPlan, PlaceStatus, Category
+from models import (
+    UserRoles, User, Place, Comment, TravelPlan, 
+    PlaceStatus, Category, place_category_association
+)
 from response import create_response
 from schemas import PlaceCreate, CommentCreate, CommentResponse, TravelPlanCreate
 from predictionPipeline import analyze_text
@@ -296,7 +299,16 @@ def get_all_places_with_comments_by_place_id(db: Session, place_id: int):
 
 # Add a new function to get places by tag
 def get_places_by_tag(db: Session, tag: str, min: float, max: float):
-    places = db.query(Place).filter(Place.tags.ilike(f"%{tag}%")).filter(and_(Place.rating_score >= min, Place.rating_score <= max)).order_by(desc(Place.rating_score)).all()
+    # Convert tag string to integer since it's a category ID
+    category_id = int(tag)
+    
+    # Query places through the association table
+    places = db.query(Place)\
+        .join(place_category_association)\
+        .filter(place_category_association.c.category_id == category_id)\
+        .filter(and_(Place.rating_score >= min, Place.rating_score <= max))\
+        .order_by(desc(Place.rating_score))\
+        .all()
     places_with_comments_result = []
 
     for place in places:
