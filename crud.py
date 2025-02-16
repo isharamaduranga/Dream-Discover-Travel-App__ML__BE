@@ -238,6 +238,7 @@ def get_all_places_with_comments(db: Session):
             "rating_score": place.rating_score,
             "posted_date": place.posted_date,
             "user_image": user.user_img,
+            "status": place.status.value,
             "comments": comments_response
         }
 
@@ -397,6 +398,7 @@ def get_all_places_with_comments_by_search_text(db: Session, search_text: str):
             "rating_score": place.rating_score,
             "posted_date": place.posted_date,
             "user_image": user.user_img,
+            "status": place.status.value,
             "comments": comments_response
         }
 
@@ -572,15 +574,19 @@ def get_places_by_category(db: Session, category_id: int):
 def get_pending_and_inactive_places(db: Session):
     pending_places = db.query(Place).filter(Place.status == PlaceStatus.pending).all()
     inactive_places = db.query(Place).filter(Place.status == PlaceStatus.inactive).all()
-    
+
     def format_places(places):
+
         return [
             {
                 "id": place.id,
-                "title": place.title,
                 "img": place.img,
+                "title": place.title,
+                "content": place.content,
+                "tags": place.tags.split(','),
                 "user_id": place.user_id,
                 "user_full_name": place.user_full_name,
+                "user_image": place.user.user_img,
                 "posted_date": place.posted_date,
                 "status": place.status.value
             }
