@@ -365,7 +365,7 @@ def change_place_status(request: dict, db: Session = Depends(get_db)):
         error_message = "Failed to update status. Reason: {}".format(str(e))
         raise HTTPException(status_code=500, detail=error_message)
 
-@app.post("/api/v1/travel-plans/")
+@app.post("/api/v1/travel-plans")
 def create_travel_plan_endpoint(
     user_id: int = Form(...),
     place_id: int = Form(...),

@@ -283,6 +283,7 @@ def get_all_places_with_comments_by_place_id(db: Session, place_id: int):
             "content": place.content,
             "tags": place.tags.split(','),
             "user_id": place.user_id,
+            "status":place.status.value,
             "user_full_name": place.user_full_name,
             "rating_score": place.rating_score,
             "posted_date": place.posted_date,
