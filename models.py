@@ -54,10 +54,10 @@ class Place(Base):
     user_full_name = Column(String)  # Add user full name
     posted_date = Column(DateTime, default=lambda: datetime.now(timezone.utc))  # Changed from UTC to timezone.utc
     content = Column(String)
-    rating_score = Column(Float)
+    rating_score = Column(Float, default=0)
     tags = Column(String)
     negative_count = Column(Integer, default=0)
-    positive_count = Column(Integer, default=0) 
+    positive_count = Column(Integer, default=0)
     neutral_count = Column(Integer, default=0)
     status = Column(Enum(PlaceStatus), default=PlaceStatus.active)  # Add status column
     comments = relationship("Comment", back_populates="place")
@@ -76,7 +76,7 @@ class Comment(Base):
     email = Column(String)  # extra add field
     name = Column(String)  # extra add field
     label = Column(String)  # sentiment label
-    static_rating = Column(Float, nullable=True)  # New field
+    static_rating = Column(Float, default=0)  # New field
     user = relationship("User", back_populates="comments")
     place = relationship("Place", back_populates="comments")
 

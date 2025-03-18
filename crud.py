@@ -163,6 +163,16 @@ def create_comment(db: Session, comment: CommentCreate):
     # Get the place from db
     place = db.query(Place).filter(Place.id == comment.place_id).first()
 
+    comments = get_comments_by_place_id(db, comment.place_id)
+
+    total_static_rating = 0
+
+    for comment in comments:
+        if comment.static_rating is not None:
+            total_static_rating += comment.static_rating
+
+    place.rating_score = total_static_rating/len(comments)
+
     if not place:
         return None  # Or raise an appropriate exception
     
