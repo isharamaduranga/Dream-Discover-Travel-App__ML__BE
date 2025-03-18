@@ -263,11 +263,11 @@ def get_all_places_with_comments_by_id_endpoint(place_id: int, db: Session = Dep
 
 # API to get places by tag
 @app.post("/api/v1/places/getByPlace", response_model=dict)
-def get_places_by_tag_endpoint(sort_by: str = Form(...), sentiment_filter: str = Form(...), tag: str = Form(...), minscore: float = Form(...), maxscore: float = Form(...),
+def get_places_by_tag_endpoint(sort_by: str = Form(...), sentiment_filter: str = Form(...), tag: int = Form(...), minscore: float = Form(...), maxscore: float = Form(...),
                                db: Session = Depends(get_db)):
     try:
         # places_with_comments = get_places_by_tag(db, tag=tag, min=minscore, max=maxscore)
-        places_with_comments = filter_places(db, category_id=tag, min=minscore, max=maxscore, sort_by=sort_by, sentiment=sentiment)
+        places_with_comments = filter_places(db, category_id=tag, min_rating=minscore, max_rating=maxscore, sort_by=sort_by, sentiment_filter=sentiment_filter)
         response_data = {
             "status": "success",
             "message": "Successfully fetched",
