@@ -354,6 +354,67 @@ def get_places_by_tag(db: Session, tag: str, min: float, max: float):
 
     return places_with_comments_result
 
+def filter_places(
+    db: Session,
+    category_id: int = None,
+    min_rating: float = 0,
+    max_rating: float = 5,
+    sentiment_filter: str = None,  # "positive", "negative", "neutral"
+    sort_by: str = None  # "most_popular", "most_reviewed", "most_engaged", "most_travel_planned"
+):
+    query = db.query(Place)
+
+    # 1️⃣ **Filter by Category (if provided)**
+    if category_id:
+        query = query.join(Place.categories).filter(Category.id == category_id)
+
+    # 2️⃣ **Filter by Rating Range**
+    query = query.filter(and_(Place.rating_score >= min_rating, Place.rating_score <= max_rating))
+
+    # 3️⃣ **Filter by Sentiment Analysis**
+    if sentiment_filter:
+        if sentiment_filter == "positive":
+            query = query.filter(Place.positive_count > Place.negative_count)
+        elif sentiment_filter == "negative":
+            query = query.filter(Place.negative_count > Place.positive_count)
+        elif sentiment_filter == "neutral":
+            query = query.filter(Place.neutral_count > Place.positive_count + Place.negative_count)
+
+    # 4️⃣ **Sorting Based on Criteria**
+    if sort_by == "most_popular":
+        query = query.order_by(desc(Place.rating_score))  # Sort by highest rating
+
+    elif sort_by == "most_reviewed":
+        query = query.outerjoin(Comment).group_by(Place.id).order_by(desc(func.count(Comment.id)))  # Sort by number of reviews
+
+    elif sort_by == "most_engaged":
+        query = query.order_by(desc(Place.positive_count + Place.neutral_count + Place.negative_count))  # Sort by most sentiment interactions
+
+    elif sort_by == "most_travel_planned":
+        query = query.outerjoin(TravelPlan).group_by(Place.id).order_by(desc(func.count(TravelPlan.id)))  # Sort by most planned travels
+
+    # 5️⃣ **Execute Query & Return Results**
+    places = query.all()
+
+    # 6️⃣ **Format Response Data**
+    places_result = []
+    for place in places:
+        places_result.append({
+            "id": place.id,
+            "title": place.title,
+            "image": place.img,
+            "rating_score": place.rating_score,
+            "positive_count": place.positive_count,
+            "neutral_count": place.neutral_count,
+            "negative_count": place.negative_count,
+            "category": [cat.title for cat in place.categories],
+            "comments_count": len(place.comments),
+            "travel_plans_count": len(place.travel_plans),
+            "posted_date": place.posted_date,
+        })
+
+    return places_result
+
 
 # Add a new function to search for places and comments
 def get_all_places_with_comments_by_search_text(db: Session, search_text: str):

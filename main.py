@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from crud import create_user, authenticate_user, get_users, get_user, delete_user_from_db, create_place, \
     get_places_by_user_id, get_place_by_place_id, create_comment, get_comments_by_user_id, get_comments_by_place_id, \
-    get_all_places_with_comments, get_all_places_with_comments_by_place_id, get_places_by_tag, \
+    get_all_places_with_comments, get_all_places_with_comments_by_place_id, filter_places,get_places_by_tag, \
     get_all_places_with_comments_by_search_text, create_travel_plan, update_travel_plan, get_filtered_travel_plans, \
     get_place_sentiment_by_date_range, get_all_categories, get_places_by_category, get_pending_and_inactive_places
 from response import create_response
@@ -263,10 +263,11 @@ def get_all_places_with_comments_by_id_endpoint(place_id: int, db: Session = Dep
 
 # API to get places by tag
 @app.post("/api/v1/places/getByPlace", response_model=dict)
-def get_places_by_tag_endpoint(tag: str = Form(...), minscore: float = Form(...), maxscore: float = Form(...),
+def get_places_by_tag_endpoint(sort_by: str = Form(...), sentiment_filter: str = Form(...), tag: str = Form(...), minscore: float = Form(...), maxscore: float = Form(...),
                                db: Session = Depends(get_db)):
     try:
-        places_with_comments = get_places_by_tag(db, tag=tag, min=minscore, max=maxscore)
+        # places_with_comments = get_places_by_tag(db, tag=tag, min=minscore, max=maxscore)
+        places_with_comments = filter_places(db, category_id=tag, min=minscore, max=maxscore, sort_by=sort_by, sentiment=sentiment)
         response_data = {
             "status": "success",
             "message": "Successfully fetched",
