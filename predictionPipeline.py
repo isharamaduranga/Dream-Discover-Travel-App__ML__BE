@@ -12,7 +12,7 @@ def remove_punctuations(text):
 
 def load_model_and_resources():
     try:
-        with open('static/model/model_naive.pickle','rb') as f:
+        with open('static/model/model_final.pickle','rb') as f:
             model = pickle.load(f)
         
         with open('static/model/corpora/stopwords/english','r') as file:
