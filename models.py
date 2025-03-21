@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Enum, DateTime, Text, Float, Table
+from sqlalchemy import Column, Integer, String, ForeignKey, Enum, DateTime, Text, Float, Table, Boolean
 from sqlalchemy.orm import declarative_base, relationship
 from enum import Enum as PyEnum
 from datetime import datetime, timezone
@@ -98,16 +98,17 @@ class TravelPlan(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
     place_id = Column(Integer, ForeignKey("places.id"))
-    travel_date = Column(DateTime)
-    email_address = Column(String)
+    travel_date = Column(DateTime(timezone=True), nullable=False)  # Store with timezon
+    email_address = Column(String(255))
     budget = Column(Float)
     number_of_travelers = Column(Integer)
     preferred_activities = Column(Text)
     special_notes = Column(Text, nullable=True)
     notification_preference = Column(Enum(NotificationPreference), default=NotificationPreference.none)
     notification_days_before = Column(Integer, nullable=True)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
-    
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    email_sent = Column(Boolean, default=False, nullable=False)  # Critical fix
+
     # Relationships
     user = relationship("User", back_populates="travel_plans")
     place = relationship("Place", back_populates="travel_plans")

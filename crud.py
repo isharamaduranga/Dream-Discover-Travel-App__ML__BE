@@ -9,9 +9,9 @@ from fastapi import UploadFile, Form
 from passlib.context import CryptContext
 from sqlalchemy import desc, and_
 from sqlalchemy.orm import Session
-
+from sqlalchemy import func
 from models import (
-    UserRoles, User, Place, Comment, TravelPlan, 
+    UserRoles, User, Place, Comment, TravelPlan,
     PlaceStatus, Category, place_category_association
 )
 from response import create_response
@@ -134,10 +134,10 @@ def create_place(db: Session, place: PlaceCreate, img: UploadFile):
         category_ids = place.tags if isinstance(place.tags, list) else place.tags.split(',')
         category_ids = [int(cat_id) for cat_id in category_ids]
         categories = db.query(Category).filter(Category.id.in_(category_ids)).all()
-        
+
         # Associate categories with the place
         place_db.categories = categories
-        
+
         db.commit()
         db.refresh(place_db)
 
@@ -159,23 +159,36 @@ def get_place_by_place_id(db: Session, place_id: int):
 def create_comment(db: Session, comment: CommentCreate):
     # Get sentiment analysis result
     sentiment = analyze_text(comment.comment_text)
-    
+
     # Get the place from db
     place = db.query(Place).filter(Place.id == comment.place_id).first()
+
+    if not place:
+        return None  # Or raise an appropriate exception
 
     comments = get_comments_by_place_id(db, comment.place_id)
 
     total_static_rating = 0
+    rating_count = 0
 
-    for comment in comments:
-        if comment.static_rating is not None:
-            total_static_rating += comment.static_rating
+    for comment_for_rating in comments:
+        if comment_for_rating.static_rating is not None:
+            total_static_rating += comment_for_rating.static_rating
+            rating_count += 1
 
-    place.rating_score = total_static_rating/len(comments)
+        # Add current comment's rating to the average calculation
+    if comment.static_rating is not None:
+        total_static_rating += comment.static_rating
+        rating_count += 1
 
-    if not place:
-        return None  # Or raise an appropriate exception
-    
+
+    # Avoid division by zero
+    if rating_count > 0:
+        place.rating_score = total_static_rating / rating_count
+    else:
+        place.rating_score = 0  # Or comment.static_rating or any other default
+
+
     # Update sentiment counts based on the analysis result
     if sentiment == 'negative':
         place.negative_count += 1
@@ -183,7 +196,7 @@ def create_comment(db: Session, comment: CommentCreate):
         place.positive_count += 1
     elif sentiment == 'neutral':
         place.neutral_count += 1
-    
+
     db_comment = Comment(
         comment_text=comment.comment_text,
         email=comment.email,
@@ -193,7 +206,7 @@ def create_comment(db: Session, comment: CommentCreate):
         label=sentiment,
         static_rating=comment.static_rating
     )
-    
+
     db.add(db_comment)
     db.commit()  # This commit will save both the comment and place changes
     db.refresh(db_comment)
@@ -313,7 +326,7 @@ def get_all_places_with_comments_by_place_id(db: Session, place_id: int):
 def get_places_by_tag(db: Session, tag: str, min: float, max: float):
     # Convert tag string to integer since it's a category ID
     category_id = int(tag)
-    
+
     # Query places through the association table
     places = db.query(Place)\
         .join(place_category_association)\
@@ -379,7 +392,8 @@ def filter_places(
         query = query.join(Place.categories).filter(Category.id == category_id)
 
     # 2️⃣ **Filter by Rating Range**
-    query = query.filter(and_(Place.rating_score >= min_rating, Place.rating_score <= max_rating))
+    if min_rating and max_rating:
+        query = query.filter(and_(Place.rating_score >= min_rating, Place.rating_score <= max_rating))
 
     # 3️⃣ **Filter by Sentiment Analysis**
     if sentiment_filter:
@@ -409,9 +423,11 @@ def filter_places(
     # 6️⃣ **Format Response Data**
     places_result = []
     for place in places:
+        user = get_user(db, place.user_id)
         places_result.append({
             "id": place.id,
             "title": place.title,
+            "content": place.content,
             "image": place.img,
             "rating_score": place.rating_score,
             "positive_count": place.positive_count,
@@ -421,6 +437,9 @@ def filter_places(
             "comments_count": len(place.comments),
             "travel_plans_count": len(place.travel_plans),
             "posted_date": place.posted_date,
+            "user_id":place.user_id,
+            "user_full_name":place.user_full_name,
+            "user_image":user.user_img,
         })
 
     return places_result
@@ -491,7 +510,7 @@ def create_travel_plan(db: Session, travel_plan: TravelPlanCreate):
         notification_preference=travel_plan.notification_preference,
         notification_days_before=travel_plan.notification_days_before
     )
-    
+
     db.add(db_travel_plan)
     db.commit()
     db.refresh(db_travel_plan)
@@ -500,10 +519,10 @@ def create_travel_plan(db: Session, travel_plan: TravelPlanCreate):
 def update_travel_plan(db: Session, travel_plan_id: int, travel_plan_data: TravelPlanCreate):
     # Get existing travel plan
     db_travel_plan = db.query(TravelPlan).filter(TravelPlan.id == travel_plan_id).first()
-    
+
     if not db_travel_plan:
         return None
-        
+
     # Update travel plan fields
     db_travel_plan.user_id = travel_plan_data.user_id
     db_travel_plan.place_id = travel_plan_data.place_id
@@ -515,7 +534,7 @@ def update_travel_plan(db: Session, travel_plan_id: int, travel_plan_data: Trave
     db_travel_plan.special_notes = travel_plan_data.special_notes
     db_travel_plan.notification_preference = travel_plan_data.notification_preference
     db_travel_plan.notification_days_before = travel_plan_data.notification_days_before
-    
+
     # Save changes
     db.commit()
     db.refresh(db_travel_plan)
@@ -524,21 +543,21 @@ def update_travel_plan(db: Session, travel_plan_id: int, travel_plan_data: Trave
 def get_filtered_travel_plans(db: Session, user_id: int = None, place_id: int = None):
     # Start with base query
     query = db.query(TravelPlan)
-    
+
     # Apply filters if provided
     if user_id is not None:
         query = query.filter(TravelPlan.user_id == user_id)
     if place_id is not None:
         query = query.filter(TravelPlan.place_id == place_id)
-        
+
     travel_plans = query.all()
-    
+
     # Convert SQLAlchemy objects to dictionaries with related information
     travel_plans_with_details = []
     for plan in travel_plans:
         place = get_place_by_place_id(db, plan.place_id)
         user = get_user(db, plan.user_id)
-        
+
         plan_dict = {
             "id": plan.id,
             "user_id": plan.user_id,
@@ -558,7 +577,7 @@ def get_filtered_travel_plans(db: Session, user_id: int = None, place_id: int = 
             "created_at": plan.created_at
         }
         travel_plans_with_details.append(plan_dict)
-    
+
     return travel_plans_with_details
 
 def get_place_sentiment_by_date_range(db: Session, place_id: int, start_date: datetime, end_date: datetime):
@@ -566,7 +585,7 @@ def get_place_sentiment_by_date_range(db: Session, place_id: int, start_date: da
     place = db.query(Place).filter(Place.id == place_id).first()
     if not place:
         return None
-        
+
     # Initialize response structure
     response = {
         "place": place.title,
@@ -576,18 +595,18 @@ def get_place_sentiment_by_date_range(db: Session, place_id: int, start_date: da
         },
         "tweet_sentiment": []
     }
-    
+
     # Get all comments for this place within the date range
     comments = db.query(Comment).filter(
         Comment.place_id == place_id,
         Comment.commented_at >= start_date,
         Comment.commented_at <= end_date
     ).all()
-    
+
     # Create a dictionary to store counts for each date
     date_sentiments = {}
     current_date = start_date.date()
-    
+
     # Initialize counts for each date in the range
     while current_date <= end_date.date():
         date_sentiments[current_date] = {
@@ -597,7 +616,7 @@ def get_place_sentiment_by_date_range(db: Session, place_id: int, start_date: da
             "neutral": 0
         }
         current_date += timedelta(days=1)
-    
+
     # Count sentiments for each comment
     for comment in comments:
         comment_date = comment.commented_at.date()
@@ -607,13 +626,13 @@ def get_place_sentiment_by_date_range(db: Session, place_id: int, start_date: da
             date_sentiments[comment_date]["negative"] += 1
         elif comment.label == "neutral":
             date_sentiments[comment_date]["neutral"] += 1
-    
+
     # Convert the dictionary to a list sorted by date
     sentiment_list = [
-        sentiment_data 
+        sentiment_data
         for date, sentiment_data in sorted(date_sentiments.items())
     ]
-    
+
     response["tweet_sentiment"] = sentiment_list
     return response
 
@@ -631,7 +650,7 @@ def get_places_by_category(db: Session, category_id: int):
     category = db.query(Category).filter(Category.id == category_id).first()
     if not category:
         return None
-        
+
     places_with_details = []
     for place in category.places:
         if place.status == PlaceStatus.active:
@@ -640,7 +659,7 @@ def get_places_by_category(db: Session, category_id: int):
                 "title": place.title,
             }
             places_with_details.append(place_dict)
-            
+
     return places_with_details
 
 def get_pending_and_inactive_places(db: Session):
@@ -664,7 +683,7 @@ def get_pending_and_inactive_places(db: Session):
             }
             for place in places
         ]
-    
+
     return {
         "pending_places": format_places(pending_places),
         "inactive_places": format_places(inactive_places)
