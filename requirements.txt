@@ -161,3 +161,5 @@ webencodings==0.5.1
 websocket-client==1.8.0
 websockets==12.0
 widgetsnbextension==4.0.13
+
+APScheduler~=3.11.0
