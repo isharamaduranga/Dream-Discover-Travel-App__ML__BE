@@ -77,7 +77,7 @@ networkx==3.2.1
 nltk==3.9.1
 notebook==7.3.2
 notebook_shim==0.2.4
-numpy~=2.2.1
+numpy~=1.26.3
 nvidia-cublas-cu11==11.10.3.66
 nvidia-cuda-cupti-cu11==11.7.101
 nvidia-cuda-nvrtc-cu11==11.7.99
