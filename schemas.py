@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import List, Optional
 from datetime import datetime
 from models import NotificationPreference
@@ -12,9 +12,7 @@ class UserBase(BaseModel):
 class User(UserBase):
     id: int
     user_img: str
-
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserLogin(BaseModel):
@@ -47,8 +45,7 @@ class PlaceResponse(BaseModel):
     rating_score: float
     posted_date: datetime
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class PlaceGetByUserId(BaseModel):
@@ -119,6 +116,4 @@ class TravelPlanCreate(BaseModel):
 class TravelPlanResponse(TravelPlanCreate):
     id: int
     created_at: datetime
-
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)

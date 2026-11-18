@@ -49,6 +49,11 @@ app.add_middleware(
 )
 
 
+@app.get("/")
+def health_check():
+    return {"status": "success", "message": "Dream Discover API is running"}
+
+
 # Dependency to get the current user from the database
 def get_db():
     db = SessionLocal()
@@ -361,9 +366,14 @@ def get_place_by_place_id_endpoint(place_data: PlaceGetByPlaceId, db: Session = 
 def create_comment_endpoint(comment: CommentCreate, db: Session = Depends(get_db)):
     try:
         new_comment = create_comment(db, comment)
-        return create_response("success", "Comment created successfully", data={"comment_id": new_comment})
+        if new_comment is None:
+            raise HTTPException(status_code=404, detail="Place not found")
+        return create_response("success", "Comment created successfully", data={"comment_id": new_comment.id})
+    except HTTPException:
+        raise
     except Exception as e:
-        return create_response("error", f"Internal Server Error: {str(e)}", data=None)
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
 
 
 # API to get comments by userId in related user
